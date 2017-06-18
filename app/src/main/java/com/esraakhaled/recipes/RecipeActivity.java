@@ -2,12 +2,15 @@ package com.esraakhaled.recipes;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.StaticLayout;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -21,6 +24,7 @@ import com.esraakhaled.recipes.adapter.IngredientsAdapter;
 import com.esraakhaled.recipes.data.models.Recipe;
 import com.esraakhaled.recipes.data.remote.RecipeAPI;
 import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import retrofit2.Call;
@@ -39,13 +43,19 @@ public class RecipeActivity extends AppCompatActivity {
     LinearLayoutManager layoutManager;
     IngredientsAdapter adapter;
 
+    Button getReviews;
+
+    final static String RECIPE_ID="RECIPE_ID";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe);
 
+        ImageLoader.getInstance().init(ImageLoaderConfiguration.createDefault(RecipeActivity.this));
+
         //get data from intent
-        recipeID= getIntent().getExtras().getInt("RECIPE_ID");
+        recipeID= getIntent().getExtras().getInt(RECIPE_ID);
 
         title = (TextView) findViewById(R.id.recipe_details_title);
         description = (TextView) findViewById(R.id.recipe_details_description);
@@ -56,6 +66,17 @@ public class RecipeActivity extends AppCompatActivity {
         recipeImage = (ImageView) findViewById(R.id.recipe_details_image);
         loading = (ImageView) findViewById(R.id.recipe_details_loading);
         recipeIngredients = (RecyclerView) findViewById(R.id.recipe_details_ingredients_list);
+
+        getReviews = (Button) findViewById(R.id.get_reviews);
+        getReviews.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(RecipeActivity.this,ReviewsActivity.class);
+                i.putExtra(RECIPE_ID,recipeID);
+                i.putExtra("RECIPE_TITLE",title.getText().toString());
+                startActivity(i);
+            }
+        });
 
         layoutManager= new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         recipeIngredients.setLayoutManager(layoutManager);
@@ -113,6 +134,7 @@ public class RecipeActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Recipe> call, Throwable t) {
                 dialog.dismiss();
+
                 Toast.makeText(RecipeActivity.this, "Check your Internet Connection!", Toast.LENGTH_SHORT).show();
             }
         });

@@ -66,8 +66,7 @@
             android:layout_below="@+id/recipe_details_subcategory"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
-            android:layout_margin="10dp"
-            />
+            android:layout_margin="10dp" />
 
         <ImageView
             android:id="@+id/recipe_details_image"
@@ -127,7 +126,18 @@
             android:layout_marginLeft="10dp"
             android:layout_marginBottom="10dp"
             />
-
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="See Recipe Reviews"
+            android:textColor="#fff"
+            android:textSize="15sp"
+            android:background="#000"
+            android:padding="10dp"
+            android:id="@+id/get_reviews"
+            android:layout_below="@id/recipe_details_instructions"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="10dp"/>
     </RelativeLayout>
 
 </ScrollView>

@@ -1,7 +1,10 @@
 package com.esraakhaled.recipes.data.remote;
 
 import com.esraakhaled.recipes.data.models.Recipe;
+import com.esraakhaled.recipes.data.models.RecipeReview;
 import com.esraakhaled.recipes.data.models.RecipeSearch;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Retrofit;
@@ -30,6 +33,9 @@ public interface RecipeAPI {
     Call<Recipe> getRecipe(@Path("id") int ID,
                            @Query("api_key") String apiKey);
 
+    @GET("recipe/{recipeId}/reviews")
+    Call<List<RecipeReview>> getReviews(@Path("recipeId")int recipeID,
+                                       @Query("api_key") String apiKey);
 
     class RecipesFetcher{
         private static RecipeAPI service;
