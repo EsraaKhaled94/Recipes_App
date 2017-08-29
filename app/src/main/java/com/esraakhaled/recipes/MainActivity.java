@@ -3,6 +3,7 @@ package com.esraakhaled.recipes;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -33,23 +34,27 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.preference.PreferenceManager.getDefaultSharedPreferences;
+
 public class MainActivity extends AppCompatActivity {
 
-    final static String API_KEY ="axV15293h59oU9Z853fw48CmI1H1Js";
-    int code =1;
-    String searchWord="";
+    final static String API_KEY = "axV15293h59oU9Z853fw48CmI1H1Js";
+    int code = 1;
+    String searchWord = "";
 
-    List<Result> results,newResults;
+    List<Result> results, newResults;
     FloatingActionButton search;
     int NUMBER_OF_RECIPES_TO_FETCH = 15;
-    int currentPage=0;
-    boolean scrolling=false;
+    int currentPage = 0;
+    boolean scrolling = false;
     RecyclerView recipesPreview;
     RecyclerView.LayoutManager layoutManager;
     RecipesAdapter recipesAdapter;
     EndlessRecyclerViewScrollListener scrollListener;
 
     SwipeRefreshLayout swipeRefreshLayout;
+
+    SharedPreferences dataSaver;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -58,12 +63,17 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        swipeRefreshLayout= (SwipeRefreshLayout) findViewById(R.id.swipe);
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe);
 
         ImageLoader.getInstance().init(ImageLoaderConfiguration.createDefault(MainActivity.this));
         recipesPreview = (RecyclerView) findViewById(R.id.recipes_preview);
         layoutManager = new LinearLayoutManager(MainActivity.this);
         recipesPreview.setLayoutManager(layoutManager);
+
+        dataSaver = getDefaultSharedPreferences(getApplicationContext());
+
+        searchWord = dataSaver.getString("SEARCH_WORD", "");
+        code = dataSaver.getInt("CODE", 1);
 
         //Endless Scrolling
         scrollListener= new EndlessRecyclerViewScrollListener((LinearLayoutManager) layoutManager) {
@@ -76,13 +86,16 @@ public class MainActivity extends AppCompatActivity {
         };
         recipesPreview.addOnScrollListener(scrollListener);
 
+
         //swipe refresh
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener(){
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                recipesAdapter.clear();
-                currentPage=0;
-                scrolling=false;
+                if (recipesAdapter != null) {
+                    recipesAdapter.clear();
+                }
+                currentPage = 0;
+                scrolling = false;
                 getRecipesFromAPI();
                 swipeRefreshLayout.setRefreshing(false);
             }
@@ -91,11 +104,11 @@ public class MainActivity extends AppCompatActivity {
         getRecipesFromAPI();
 
         //Search Box
-        search= (FloatingActionButton) findViewById(R.id.floatingSearch);
+        search = (FloatingActionButton) findViewById(R.id.floatingSearch);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder searchDialog =new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogCustom));
+                AlertDialog.Builder searchDialog = new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogCustom));
                 searchDialog.setTitle("Search Recipes");
                 searchDialog.setMessage("Enter search word");
                 searchDialog.setIcon(R.drawable.search_small);
@@ -109,24 +122,37 @@ public class MainActivity extends AppCompatActivity {
                 searchDialog.setPositiveButton("Search", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         searchWord = searchbox.getText().toString();
-                        if (searchWord.equals("") ) {
+                        if (searchWord.equals("")) {
                             Toast.makeText(MainActivity.this, "Please Enter a valid Search word!", Toast.LENGTH_SHORT).show();
-                        }
-                        else {
+                        } else {
                             code = 2;
-                            currentPage=0;
-                            scrolling=false;
+                            currentPage = 0;
+                            scrolling = false;
                             recipesAdapter.clear();
+                            dataSaver.edit()
+                                    .putString("SEARCH_WORD", searchWord)
+                                    .commit();
+
+                            dataSaver.edit()
+                                    .putInt("CODE", code)
+                                    .commit();
                             getRecipesFromAPI();
                             dialog.dismiss();
                         }
                     }
                 });
-                searchDialog.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+                searchDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        code=1;
-                        dialog.cancel();
+                        code = 1;
+                        dataSaver.edit()
+                                .putString("SEARCH_WORD", "")
+                                .commit();
+
+                        dataSaver.edit()
+                                .putInt("CODE", code)
+                                .commit();
                         getRecipesFromAPI();
+                        dialog.cancel();
                     }
                 });
                 searchDialog.show();
@@ -135,29 +161,32 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
-
         //land scape mode
-        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
-            layoutManager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
             recipesPreview.setLayoutManager(layoutManager);
+            searchWord = dataSaver.getString("SEARCH_WORD", "");
+            code = dataSaver.getInt("CODE", 1);
 
             //Endless Scrolling
-            scrollListener= new EndlessRecyclerViewScrollListener((StaggeredGridLayoutManager) layoutManager) {
+            scrollListener = new EndlessRecyclerViewScrollListener((StaggeredGridLayoutManager) layoutManager) {
                 @Override
                 public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                     currentPage = page;
-                    scrolling=true;
+                    scrolling = true;
                     getRecipesFromAPI();
                 }
             };
             recipesPreview.addOnScrollListener(scrollListener);
         }
         //portrait mode
-        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
 
             layoutManager = new LinearLayoutManager(MainActivity.this);
             recipesPreview.setLayoutManager(layoutManager);
+
+            searchWord = dataSaver.getString("SEARCH_WORD", "");
+            code = dataSaver.getInt("CODE", 1);
 
             //Endless Scrolling
             scrollListener = new EndlessRecyclerViewScrollListener((LinearLayoutManager) layoutManager) {
@@ -180,22 +209,21 @@ public class MainActivity extends AppCompatActivity {
             dialog.setCancelable(false);
             dialog.show();
         }
-        if (code==1) {
-            RecipeAPI.RecipesFetcher.getInstance().getRecipes(((currentPage*NUMBER_OF_RECIPES_TO_FETCH)+1), NUMBER_OF_RECIPES_TO_FETCH, API_KEY).enqueue(new Callback<RecipeSearch>() {
+        if (code == 1) {
+            RecipeAPI.RecipesFetcher.getInstance().getRecipes(((currentPage * NUMBER_OF_RECIPES_TO_FETCH) + 1), NUMBER_OF_RECIPES_TO_FETCH, API_KEY).enqueue(new Callback<RecipeSearch>() {
                 @Override
                 public void onResponse(Call<RecipeSearch> call, Response<RecipeSearch> response) {
                     if (response.isSuccessful()) {
                         if (scrolling) {
                             dialog.dismiss();
-                            newResults=response.body().getResults();
-                            int oldSize=results.size();
+                            newResults = response.body().getResults();
+                            int oldSize = results.size();
                             results.addAll(newResults);
                             recipesAdapter.notifyItemRangeInserted(oldSize, newResults.size());
-                        }
-                        else {
+                        } else {
                             dialog.dismiss();
-                            results=response.body().getResults();
-                            recipesAdapter = new RecipesAdapter(results,recipesPreview, MainActivity.this);
+                            results = response.body().getResults();
+                            recipesAdapter = new RecipesAdapter(results, recipesPreview, MainActivity.this);
                             recipesPreview.setAdapter(recipesAdapter);
                         }
 
@@ -211,27 +239,24 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Check your Internet Connection!", Toast.LENGTH_SHORT).show();
                 }
             });
-        }
-        else if (code ==2){
-            RecipeAPI.RecipesFetcher.getInstance().getRecipes(((currentPage*NUMBER_OF_RECIPES_TO_FETCH)+1),NUMBER_OF_RECIPES_TO_FETCH,searchWord,API_KEY).enqueue(new Callback<RecipeSearch>() {
+        } else if (code == 2) {
+            RecipeAPI.RecipesFetcher.getInstance().getRecipes(((currentPage * NUMBER_OF_RECIPES_TO_FETCH) + 1), NUMBER_OF_RECIPES_TO_FETCH, searchWord, API_KEY).enqueue(new Callback<RecipeSearch>() {
                 @Override
                 public void onResponse(Call<RecipeSearch> call, Response<RecipeSearch> response) {
                     if (response.isSuccessful()) {
                         if (scrolling) {
                             dialog.dismiss();
-                            newResults=response.body().getResults();
-                            int oldSize=results.size();
+                            newResults = response.body().getResults();
+                            int oldSize = results.size();
                             results.addAll(newResults);
                             recipesAdapter.notifyItemRangeInserted(oldSize, newResults.size());
-                        }
-                        else {
+                        } else {
                             dialog.dismiss();
-                            results=response.body().getResults();
-                            recipesAdapter = new RecipesAdapter(results,recipesPreview, MainActivity.this);
+                            results = response.body().getResults();
+                            recipesAdapter = new RecipesAdapter(results, recipesPreview, MainActivity.this);
                             recipesPreview.setAdapter(recipesAdapter);
                         }
-                    }
-                    else {
+                    } else {
                         dialog.dismiss();
                         Toast.makeText(MainActivity.this, "Something went wrong!", Toast.LENGTH_SHORT).show();
                     }

@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.animation.GlideAnimationFactory;
+import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.esraakhaled.recipes.R;
 import com.esraakhaled.recipes.RecipeActivity;
 import com.esraakhaled.recipes.data.models.Result;
@@ -20,6 +21,8 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.util.List;
+
+import static android.text.TextUtils.isEmpty;
 
 /**
  * Created by Esraa Khaled on 6/17/2017.
@@ -46,29 +49,29 @@ public class RecipesAdapter extends RecyclerView.Adapter<RecipesViewHolder> {
 
     @Override
     public void onBindViewHolder(final RecipesViewHolder holder, int position) {
+
         holder.loading.setVisibility(View.VISIBLE);
-        Glide
-                .with(context)
-                .load(R.drawable.food_loader)
-                .asGif().animate(new GlideAnimationFactory<GifDrawable>() {
-            @Override
-            public GlideAnimation<GifDrawable> build(boolean b, boolean b1) {
-                return null;
-            }
-        }).into(holder.loading);
+
+        GlideDrawableImageViewTarget imageViewTarget = new GlideDrawableImageViewTarget(holder.loading);
+        Glide.with(context).load(R.raw.food_loader).into(imageViewTarget);
+
 
         holder.title.setText(resultList.get(position).getTitle());
         holder.category.setText(resultList.get(position).getCategory());
         holder.recipeRating.setRating((float) resultList.get(position).getStarRating());
 
         holder.recipeImage.setImageResource(R.drawable.default_white);
+        holder.recipeImage.setTag(resultList.get(position).getPhotoUrl());
+
 
         ImageLoader imageLoader = ImageLoader.getInstance();
         imageLoader.loadImage(resultList.get(position).getPhotoUrl(), new SimpleImageLoadingListener() {
             @Override
             public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                holder.loading.setVisibility(View.GONE);
-                holder.recipeImage.setImageBitmap(loadedImage);
+                if (imageUri == holder.recipeImage.getTag().toString()) {
+                    holder.loading.setVisibility(View.GONE);
+                    holder.recipeImage.setImageBitmap(loadedImage);
+                }
             }
         });
     }

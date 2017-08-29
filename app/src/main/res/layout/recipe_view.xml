@@ -19,8 +19,8 @@
             android:scaleType="centerCrop"
             app:src="@drawable/default_white" />
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:src="@drawable/food_loader"
             android:layout_gravity="center"
             android:id="@+id/loading"/>
