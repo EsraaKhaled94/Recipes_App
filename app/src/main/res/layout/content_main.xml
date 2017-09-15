@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.esraakhaled.recipes.MainActivity"
+    tools:context="com.esraakhaled.recipes.views.MainActivity"
     tools:showIn="@layout/activity_main"
     android:background="#fff">
     <android.support.v4.widget.SwipeRefreshLayout
